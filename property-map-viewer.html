@@ -1,0 +1,3090 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>レオパレス物件マップビューア（サーバー不要版）</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 10px;
+        }
+
+
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        button {
+            padding: 12px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .button-secondary {
+            background: #28a745;
+        }
+
+        .button-secondary:hover {
+            background: #1e7e34;
+        }
+
+        .button-danger {
+            background: #dc3545;
+        }
+
+        .button-danger:hover {
+            background: #c82333;
+        }
+
+        .search-results,
+        .saved-properties {
+            margin-top: 20px;
+        }
+
+        .property-item {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            transition: box-shadow 0.3s;
+        }
+
+        .property-item:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .property-info {
+            flex: 1;
+        }
+
+        .property-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .property-address {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .property-id {
+            color: #999;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .property-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .saved-section {
+            background: #e8f5e8;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
+
+
+        .map-link {
+            display: inline-block;
+            background: #fd7e14;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 18px;
+            margin-top: 15px;
+            transition: background 0.3s;
+        }
+
+        .map-link:hover {
+            background: #e8590c;
+        }
+
+        .map-link-small {
+            display: inline-block;
+            background: #fd7e14;
+            color: white;
+            padding: 4px 8px;
+            text-decoration: none;
+            border-radius: 3px;
+            font-size: 12px;
+            transition: background 0.3s;
+            white-space: nowrap;
+        }
+
+        .map-link-small:hover {
+            background: #e8590c;
+            text-decoration: none;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .success {
+            color: #155724;
+            background: #d4edda;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .subsection {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .subsection-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 15px;
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            background: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .filter-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .filter-section label {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        select {
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .town-group {
+            margin-bottom: 25px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: move;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .town-group:hover {
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .town-group.dragging {
+            opacity: 0.6;
+            transform: rotate(2deg) scale(1.02);
+            box-shadow: 0 8px 25px rgba(0, 123, 255, 0.3);
+            z-index: 1000;
+        }
+
+        .town-header {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 12px 15px;
+            font-weight: bold;
+            font-size: 16px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            cursor: grab;
+        }
+
+        .town-header:active {
+            cursor: grabbing;
+        }
+
+        .town-header::before {
+            content: "⋮⋮";
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: bold;
+            margin-right: 8px;
+            line-height: 1;
+        }
+
+        .town-name {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .town-map-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+            white-space: nowrap;
+        }
+
+        .town-map-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .town-map-btn:active {
+            cursor: pointer;
+        }
+
+        .town-properties {
+            background: white;
+        }
+
+        .town-properties .property-item {
+            border: none;
+            border-bottom: 1px solid #f0f0f0;
+            border-radius: 0;
+            margin-bottom: 0;
+        }
+
+        .town-properties .property-item:last-child {
+            border-bottom: none;
+        }
+
+        .town-properties .property-item:hover {
+            background: #f8f9fa;
+        }
+
+        .town-stats {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 5px;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #1565c0;
+        }
+
+        .town-stats-details {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .route-optimization {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .route-optimization-header {
+            font-weight: bold;
+            color: #856404;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .route-options {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+
+        .route-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .route-option input[type="radio"] {
+            margin: 0;
+        }
+
+        .route-option label {
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .destination-option {
+            background: #f0f8ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 5px;
+            padding: 12px;
+            margin: 10px 0;
+        }
+
+        .destination-option-header {
+            font-weight: bold;
+            color: #0056b3;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .destination-choice {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 5px 0;
+        }
+
+        .destination-choice input[type="checkbox"] {
+            margin: 0;
+        }
+
+        .destination-choice label {
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+        }
+
+        .custom-destination {
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            padding: 6px;
+            font-size: 13px;
+            color: #555;
+            margin-top: 5px;
+        }
+
+        .manual-sort {
+            margin-top: 15px;
+        }
+
+        .sortable-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+
+        .sortable-item {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 5px 0;
+            cursor: move;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .sortable-item:hover {
+            background: #f8f9fa;
+        }
+
+        .sortable-item.dragging {
+            opacity: 0.5;
+        }
+
+        .drag-handle {
+            color: #999;
+            font-size: 18px;
+            cursor: grab;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .mobile-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-left: 10px;
+        }
+
+        .mobile-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 4px 8px;
+            font-size: 12px;
+            cursor: pointer;
+            min-width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-btn:hover {
+            background: #0056b3;
+        }
+
+        .mobile-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .touch-handle {
+            background: #f8f9fa;
+            border: 2px dashed #ddd;
+            border-radius: 4px;
+            padding: 8px;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+            margin: 5px 0;
+            user-select: none;
+        }
+
+        .touch-handle.active {
+            background: #e3f2fd;
+            border-color: #007bff;
+            color: #007bff;
+        }
+
+        /* 地域別ソート用スタイル */
+        .region-sortable-container {
+            margin: 15px 0;
+        }
+
+        .region-group-sortable {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            cursor: move;
+            transition: transform 0.2s, box-shadow 0.2s;
+            overflow: hidden;
+        }
+
+        .region-group-sortable:hover {
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .region-group-sortable.dragging {
+            opacity: 0.6;
+            transform: rotate(2deg) scale(1.02);
+            box-shadow: 0 8px 25px rgba(0, 123, 255, 0.3);
+            z-index: 1000;
+        }
+
+        .region-header-sortable {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 12px 15px;
+            font-weight: bold;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: grab;
+        }
+
+        .region-header-sortable:active {
+            cursor: grabbing;
+        }
+
+        .region-drag-handle {
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: bold;
+            margin-right: 8px;
+            line-height: 1;
+        }
+
+        .region-mobile-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .region-properties-list {
+            background: #f8f9fa;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .region-property-item {
+            padding: 8px 15px;
+            border-bottom: 1px solid #e9ecef;
+            background: white;
+        }
+
+        .region-property-item:last-child {
+            border-bottom: none;
+        }
+
+        .region-property-item:hover {
+            background: #f8f9fa;
+        }
+
+        .region-select-container {
+            background: #f0f8f0;
+            border: 1px solid #c3e6c3;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .region-select-header {
+            font-weight: bold;
+            color: #155724;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .region-select-description {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .region-checkboxes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .region-checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px;
+        }
+
+        .region-checkbox-item input[type="checkbox"] {
+            margin: 0;
+        }
+
+        .region-checkbox-item label {
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+        }
+
+        .region-select-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .region-selection-message {
+            min-height: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .sortable-item {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .drag-handle {
+                display: none;
+            }
+
+            .property-info-mobile {
+                margin-bottom: 10px;
+            }
+
+            .route-options {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .route-option {
+                justify-content: flex-start;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🏢 レオパレス物件マップビューア（サーバー不要版）</h1>
+
+        <!-- 物件管理・検索・ルート表示統合セクション -->
+        <div class="saved-section">
+            <div class="section-title">🏢 レオパレス物件管理システム</div>
+
+            <!-- 検索エリア -->
+            <div class="subsection">
+                <div class="subsection-title">🔍 物件検索</div>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="物件名、住所、物件IDで検索...">
+                    <button onclick="searchProperties()">検索</button>
+                    <button onclick="loadAllProperties()" class="button-secondary">全件表示</button>
+                </div>
+
+                <!-- フィルター -->
+                <div class="filter-section">
+                    <label for="prefectureFilter">都道府県:</label>
+                    <select id="prefectureFilter" onchange="filterByPrefecture()">
+                        <option value="">すべて</option>
+                    </select>
+                    <label for="cityFilter">市区町村:</label>
+                    <select id="cityFilter" onchange="filterByCity()">
+                        <option value="">すべて</option>
+                    </select>
+                </div>
+
+                <!-- 統計情報 -->
+                <div class="stats">
+                    <div class="stat-item">
+                        <div>総物件数</div>
+                        <div id="totalProperties">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div>検索結果</div>
+                        <div id="searchResultCount">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div>保存済み</div>
+                        <div id="savedCount">0</div>
+                    </div>
+                </div>
+
+                <div id="searchResults" class="search-results"></div>
+            </div>
+
+            <!-- 保存済み物件・ルート表示エリア -->
+            <div class="subsection">
+                <div class="subsection-title">💾 保存済み物件とルート表示</div>
+                <div style="margin-bottom: 15px;">
+                    <button onclick="clearAllSaved()" class="button-danger">すべてクリア</button>
+                    <button onclick="exportSavedProperties()" class="button-secondary">エクスポート</button>
+                </div>
+                <div id="savedProperties" class="saved-properties"></div>
+                <div id="mapLinkContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 外部JavaScriptファイルを読み込み（サーバー不要） -->
+    <script src="./leopalace-data.js"></script>
+
+    <script>
+        // グローバル変数
+        let allProperties = []; // 全物件データ
+        let currentSearchResults = []; // 現在の検索結果
+        let savedProperties = []; // 保存済み物件（ローカルストレージから読み込み）
+
+        /**
+         * ページ読み込み時の初期化処理
+         * 外部JavaScriptファイルからデータを読み込み、ローカルストレージから保存済みデータを復元する
+         */
+        window.onload = async function () {
+            try {
+                showMessage('物件データを読み込み中...', 'loading');
+                await loadJavaScriptData();
+                loadSavedProperties();
+                updateStats();
+                updateSavedPropertiesDisplay();
+                updateMapLink();
+                populateLocationFilters();
+                showMessage('データの読み込みが完了しました（サーバー不要版）', 'success');
+            } catch (error) {
+                showMessage('データの読み込みに失敗しました: ' + error.message, 'error');
+                console.error('初期化エラー:', error);
+            }
+        };
+
+        /**
+         * 外部JavaScriptファイルからデータを読み込む関数（サーバー不要）
+         * 外部JSファイルで定義されたデータの取得と前処理を行う
+         */
+        async function loadJavaScriptData() {
+            try {
+                // 外部JavaScriptファイルで定義されたデータを使用
+                if (typeof window.LEOPALACE_DATA === 'undefined') {
+                    throw new Error('データファイル（leopalace-data.js）が見つかりません。ファイルが同じフォルダにあることを確認してください。');
+                }
+
+                const data = window.LEOPALACE_DATA;
+
+                // allPropertiesが配列かどうかチェック
+                if (data.allProperties && Array.isArray(data.allProperties)) {
+                    allProperties = data.allProperties;
+                } else {
+                    throw new Error('JavaScriptデータの形式が正しくありません');
+                }
+
+                console.log(`${allProperties.length}件の物件データを読み込みました（サーバー不要版）`);
+            } catch (error) {
+                console.error('JavaScriptデータ読み込みエラー:', error);
+                throw error;
+            }
+        }
+
+        /**
+         * ローカルストレージから保存済み物件を読み込む関数
+         * 保存されたデータの妥当性チェックも行う
+         */
+        function loadSavedProperties() {
+            try {
+                const stored = localStorage.getItem('savedProperties');
+                if (stored) {
+                    savedProperties = JSON.parse(stored);
+                    // データの妥当性チェック
+                    if (!Array.isArray(savedProperties)) {
+                        savedProperties = [];
+                    }
+                }
+            } catch (error) {
+                console.error('保存済みデータの読み込みエラー:', error);
+                savedProperties = [];
+            }
+        }
+
+        /**
+         * 物件を検索する関数
+         * 物件名、住所、物件IDで部分一致検索を実行する
+         */
+        function searchProperties() {
+            const searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
+
+            if (!searchTerm) {
+                showMessage('検索キーワードを入力してください', 'error');
+                return;
+            }
+
+            // 検索実行
+            currentSearchResults = allProperties.filter(property => {
+                return (
+                    (property.propertyName && property.propertyName.toLowerCase().includes(searchTerm)) ||
+                    (property.address && property.address.toLowerCase().includes(searchTerm)) ||
+                    (property.propertyId && property.propertyId.toLowerCase().includes(searchTerm))
+                );
+            });
+
+            displaySearchResults();
+            updateStats();
+
+            if (currentSearchResults.length === 0) {
+                showMessage(`「${searchTerm}」に一致する物件が見つかりませんでした`, 'error');
+            } else {
+                showMessage(`${currentSearchResults.length}件の物件が見つかりました`, 'success');
+            }
+        }
+
+        /**
+         * 全物件を表示する関数
+         */
+        function loadAllProperties() {
+            currentSearchResults = [...allProperties];
+            displaySearchResults();
+            updateStats();
+            showMessage(`全${allProperties.length}件の物件を表示しました`, 'success');
+        }
+
+        /**
+ * 住所から町名を抽出する関数
+ * @param {string} address - 住所文字列
+ * @returns {string} 抽出された町名
+ */
+        function extractTownName(address) {
+            if (!address) return '住所不明';
+
+            // 住所から市区町村を抽出（例: "千葉県野田市中里７−１" → "野田市"）
+            const cityMatch = address.match(/[都道府県](.*?[市区町村])/);
+            if (cityMatch) {
+                return cityMatch[1];
+            }
+
+            // 東京23区の場合（例: "東京都渋谷区..." → "渋谷区"）
+            const tokyoMatch = address.match(/東京都(.*?区)/);
+            if (tokyoMatch) {
+                return tokyoMatch[1];
+            }
+
+            // その他の場合は最初の部分を返す
+            const parts = address.split(/[都道府県]/);
+            if (parts.length > 1) {
+                const afterPrefecture = parts[1];
+                const townPart = afterPrefecture.split(/[町丁目番地]/)[0];
+                return townPart || '住所不明';
+            }
+
+            return '住所不明';
+        }
+
+        /**
+         * 検索結果を町名でグループ化する関数
+         * @param {Array} properties - 物件配列
+         * @returns {Object} 町名をキーとしたグループ化されたオブジェクト
+         */
+        function groupPropertiesByTown(properties) {
+            const grouped = {};
+
+            properties.forEach(property => {
+                const townName = extractTownName(property.address);
+
+                if (!grouped[townName]) {
+                    grouped[townName] = [];
+                }
+                grouped[townName].push(property);
+            });
+
+            return grouped;
+        }
+
+        /**
+         * 検索結果を画面に表示する関数
+         * 町名でグループ化してソートして表示する
+         */
+        function displaySearchResults() {
+            const resultsContainer = document.getElementById('searchResults');
+
+            if (currentSearchResults.length === 0) {
+                resultsContainer.innerHTML = '<p class="loading">検索結果がありません</p>';
+                return;
+            }
+
+            // 最大表示件数を制限（パフォーマンス向上）
+            const maxDisplay = 100; // 町名グループ化により表示件数を増加
+            const displayResults = currentSearchResults.slice(0, maxDisplay);
+
+            // 町名でグループ化
+            const groupedByTown = groupPropertiesByTown(displayResults);
+
+            // 町名をソート
+            const sortedTownNames = Object.keys(groupedByTown).sort((a, b) => {
+                // "住所不明"を最後にソート
+                if (a === '住所不明') return 1;
+                if (b === '住所不明') return -1;
+                return a.localeCompare(b, 'ja');
+            });
+
+            let html = '';
+
+            sortedTownNames.forEach(townName => {
+                const properties = groupedByTown[townName];
+
+                // 町名のヘッダーを追加
+                html += `
+                     <div class="town-group">
+                         <div class="town-header" title="ドラッグして地域の順序を変更できます">
+                             <span class="town-name">📍 ${escapeHtml(townName)} (${properties.length}件)</span>
+                             <button class="town-map-btn" onclick="openRegionRoute('${escapeHtml(townName)}')" title="${escapeHtml(townName)}地域のみでルートを作成">
+                                 🗺️ 地域ルート
+                             </button>
+                         </div>
+                         <div class="town-properties">
+                 `;
+
+                // その町の物件を表示
+                properties.forEach(property => {
+                    const isAlreadySaved = savedProperties.some(saved => saved.propertyId === property.propertyId);
+                    const saveButtonText = isAlreadySaved ? '保存済み' : '保存';
+                    const saveButtonClass = isAlreadySaved ? 'button-secondary' : '';
+                    const saveButtonDisabled = isAlreadySaved ? 'disabled' : '';
+                    const mapLink = generateIndividualMapLink(property.address);
+
+                    html += `
+                         <div class="property-item">
+                             <div class="property-info">
+                                 <div class="property-name">${escapeHtml(property.propertyName || '物件名不明')}</div>
+                                 <div class="property-address">
+                                     <span style="margin-right: 8px;">${escapeHtml(property.address || '住所不明')}</span>
+                                     <a href="${mapLink}" target="_blank" class="map-link-small" title="この住所をGoogleマップで開く">
+                                         🗺️ 地図
+                                     </a>
+                                 </div>
+                                 <div class="property-id">物件ID: ${escapeHtml(property.propertyId || 'ID不明')}</div>
+                             </div>
+                             <div class="property-actions">
+                                 <button onclick="saveProperty('${property.propertyId}')" 
+                                         class="${saveButtonClass}" 
+                                         ${saveButtonDisabled}>
+                                     ${saveButtonText}
+                                 </button>
+                             </div>
+                         </div>
+                     `;
+                });
+
+                html += `
+                         </div>
+                     </div>
+                 `;
+            });
+
+            resultsContainer.innerHTML = html;
+
+            // 表示件数制限の警告
+            if (currentSearchResults.length > maxDisplay) {
+                resultsContainer.innerHTML += `
+                     <div class="error">
+                         注意: 検索結果が多いため、最初の${maxDisplay}件のみ表示しています。
+                         検索条件を絞り込んでください。
+                     </div>
+                 `;
+            }
+
+            // 町名別統計を表示
+            const townCount = sortedTownNames.length;
+            if (townCount > 1) {
+                const statsMessage = `${townCount}の町に分けて表示しています`;
+                showTownStats(statsMessage, groupedByTown);
+            }
+
+            // 町名グループのドラッグアンドドロップ機能を初期化
+            setTimeout(() => {
+                initializeTownGroupDragAndDrop();
+            }, 100);
+        }
+
+        /**
+         * 物件をローカルストレージに保存する関数
+         * 重複チェックを行い、保存後にUIを更新する
+         * @param {string} propertyId - 保存する物件のID
+         */
+        function saveProperty(propertyId) {
+            // 既に保存済みかチェック
+            if (savedProperties.some(saved => saved.propertyId === propertyId)) {
+                showMessage('この物件は既に保存済みです', 'error');
+                return;
+            }
+
+            // 物件データを検索
+            const property = allProperties.find(p => p.propertyId === propertyId);
+            if (!property) {
+                showMessage('物件データが見つかりません', 'error');
+                return;
+            }
+
+            // 保存実行
+            savedProperties.push({
+                ...property,
+                savedAt: new Date().toISOString() // 保存日時を追加
+            });
+
+            // ローカルストレージに保存
+            try {
+                localStorage.setItem('savedProperties', JSON.stringify(savedProperties));
+                showMessage(`「${property.propertyName}」を保存しました`, 'success');
+
+                // UI更新
+                updateSavedPropertiesDisplay();
+                updateMapLink();
+                updateStats();
+                displaySearchResults(); // 保存状態を反映
+            } catch (error) {
+                console.error('保存エラー:', error);
+                showMessage('保存に失敗しました', 'error');
+                // エラー時はメモリ上のデータも削除
+                savedProperties.pop();
+            }
+        }
+
+        /**
+         * 保存済み物件から削除する関数
+         * @param {string} propertyId - 削除する物件のID
+         */
+        function removeSavedProperty(propertyId) {
+            const index = savedProperties.findIndex(property => property.propertyId === propertyId);
+            if (index === -1) {
+                showMessage('削除対象の物件が見つかりません', 'error');
+                return;
+            }
+
+            const removedProperty = savedProperties.splice(index, 1)[0];
+
+            try {
+                localStorage.setItem('savedProperties', JSON.stringify(savedProperties));
+                showMessage(`「${removedProperty.propertyName}」を削除しました`, 'success');
+
+                // UI更新
+                updateSavedPropertiesDisplay();
+                updateMapLink();
+                updateStats();
+                displaySearchResults(); // 保存状態を反映
+            } catch (error) {
+                console.error('削除エラー:', error);
+                showMessage('削除に失敗しました', 'error');
+                // エラー時はデータを復元
+                savedProperties.splice(index, 0, removedProperty);
+            }
+        }
+
+        /**
+         * 保存済み物件をすべてクリアする関数
+         * 確認ダイアログを表示してから実行する
+         */
+        function clearAllSaved() {
+            if (savedProperties.length === 0) {
+                showMessage('保存済み物件がありません', 'error');
+                return;
+            }
+
+            if (confirm(`保存済みの${savedProperties.length}件の物件をすべて削除しますか？`)) {
+                savedProperties = [];
+
+                try {
+                    localStorage.setItem('savedProperties', JSON.stringify(savedProperties));
+                    showMessage('すべての保存済み物件を削除しました', 'success');
+
+                    // UI更新
+                    updateSavedPropertiesDisplay();
+                    updateMapLink();
+                    updateStats();
+                    displaySearchResults(); // 保存状態を反映
+                } catch (error) {
+                    console.error('削除エラー:', error);
+                    showMessage('削除に失敗しました', 'error');
+                }
+            }
+        }
+
+        /**
+ * 保存済み物件の表示を更新する関数
+ * 町名でグループ化して表示し、削除ボタンなどのイベントハンドラーを設定する
+ */
+        function updateSavedPropertiesDisplay() {
+            const container = document.getElementById('savedProperties');
+            const mapContainer = document.getElementById('mapLinkContainer');
+
+            if (savedProperties.length === 0) {
+                container.innerHTML = '<p class="loading">保存済み物件がありません</p>';
+                mapContainer.innerHTML = '<div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; color: #666; text-align: center;">物件を保存するとルート表示が利用できます</div>';
+                return;
+            }
+
+            // 町名でグループ化
+            const groupedByTown = groupPropertiesByTown(savedProperties);
+
+            // 町名をソート
+            const sortedTownNames = Object.keys(groupedByTown).sort((a, b) => {
+                if (a === '住所不明') return 1;
+                if (b === '住所不明') return -1;
+                return a.localeCompare(b, 'ja');
+            });
+
+            let html = '';
+            let totalCount = 0;
+
+            sortedTownNames.forEach(townName => {
+                const properties = groupedByTown[townName];
+
+                // 保存日時でソート（新しい順）
+                const sortedProperties = [...properties].sort((a, b) =>
+                    new Date(b.savedAt || 0) - new Date(a.savedAt || 0)
+                );
+
+                // 町名のヘッダーを追加
+                html += `
+                     <div class="town-group">
+                         <div class="town-header" title="ドラッグして地域の順序を変更できます">
+                             <span class="town-name">💾 ${escapeHtml(townName)} (保存済み: ${properties.length}件)</span>
+                             <button class="town-map-btn" onclick="openRegionRoute('${escapeHtml(townName)}')" title="${escapeHtml(townName)}地域のみでルートを作成">
+                                 🗺️ 地域ルート
+                             </button>
+                         </div>
+                         <div class="town-properties">
+                 `;
+
+                // その町の保存済み物件を表示
+                sortedProperties.forEach(property => {
+                    totalCount++;
+                    const mapLink = generateIndividualMapLink(property.address);
+                    html += `
+                         <div class="property-item">
+                             <div class="property-info">
+                                 <div class="property-name">${totalCount}. ${escapeHtml(property.propertyName || '物件名不明')}</div>
+                                 <div class="property-address">
+                                     <span style="margin-right: 8px;">${escapeHtml(property.address || '住所不明')}</span>
+                                     <a href="${mapLink}" target="_blank" class="map-link-small" title="この住所をGoogleマップで開く">
+                                         🗺️ 地図
+                                     </a>
+                                 </div>
+                                 <div class="property-id">
+                                     物件ID: ${escapeHtml(property.propertyId || 'ID不明')}
+                                     ${property.savedAt ? ` | 保存日: ${new Date(property.savedAt).toLocaleString('ja-JP')}` : ''}
+                                 </div>
+                             </div>
+                             <div class="property-actions">
+                                 <button onclick="removeSavedProperty('${property.propertyId}')" class="button-danger">
+                                     削除
+                                 </button>
+                             </div>
+                         </div>
+                     `;
+                });
+
+                html += `
+                         </div>
+                     </div>
+                 `;
+            });
+
+            container.innerHTML = html;
+
+            // 保存済み物件の町名別統計を表示
+            if (sortedTownNames.length > 1) {
+                const savedStatsMessage = `保存済み物件を${sortedTownNames.length}の町に分けて表示`;
+                showSavedStats(savedStatsMessage, groupedByTown);
+            }
+
+            // 町名グループのドラッグアンドドロップ機能を初期化
+            setTimeout(() => {
+                initializeTownGroupDragAndDrop();
+            }, 100);
+        }
+
+        /**
+ * 住所から地域の座標を推定する関数（簡易版）
+ * @param {string} address - 住所
+ * @returns {Object} 推定座標 {lat, lng}
+ */
+        function estimateCoordinates(address) {
+            console.log('estimateCoordinates呼び出し:', address);
+            if (!address) {
+                console.log('住所が空、nullを返す');
+                return null;
+            }
+
+            // 日本の主要都市の概算座標（参考値）
+            const cityCoordinates = {
+                '野田市': { lat: 35.9564, lng: 139.8753 },
+                '柏市': { lat: 35.8617, lng: 139.9693 },
+                '鎌ケ谷市': { lat: 35.7770, lng: 140.0010 },
+                '我孫子市': { lat: 35.8644, lng: 140.0186 },
+                '松戸市': { lat: 35.7873, lng: 139.9018 },
+                '流山市': { lat: 35.8563, lng: 139.9252 },
+                '白井市': { lat: 35.7914, lng: 140.0563 }
+            };
+
+            // 大塚駐車場の場合は正確な座標を返す
+            if (address && (address.includes('千葉県柏市中央１丁目１−３') || address.includes('大塚駐車場'))) {
+                console.log('大塚駐車場の座標を返す:', address);
+                return { lat: 35.8617, lng: 139.9693 }; // 柏市中央の座標
+            }
+
+            // 市区町村を抽出
+            const cityMatch = address.match(/([^都道府県]+[市区町村])/);
+            console.log('市区町村マッチング:', { address, cityMatch });
+            if (cityMatch) {
+                const city = cityMatch[1];
+                console.log('抽出された市区町村:', city);
+                if (cityCoordinates[city]) {
+                    console.log('座標発見:', cityCoordinates[city]);
+                    return cityCoordinates[city];
+                } else {
+                    console.log('座標データなし:', city);
+                }
+            }
+
+            console.log('座標取得失敗、nullを返す');
+            return null;
+        }
+
+        /**
+         * 2点間の距離を計算する関数（簡易版・直線距離）
+         * @param {Object} coord1 - 座標1 {lat, lng}
+         * @param {Object} coord2 - 座標2 {lat, lng}
+         * @returns {number} 距離（km）
+         */
+        function calculateDistance(coord1, coord2) {
+            if (!coord1 || !coord2) return Infinity;
+
+            const R = 6371; // 地球の半径（km）
+            const dLat = (coord2.lat - coord1.lat) * Math.PI / 180;
+            const dLng = (coord2.lng - coord1.lng) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(coord1.lat * Math.PI / 180) * Math.cos(coord2.lat * Math.PI / 180) *
+                Math.sin(dLng / 2) * Math.sin(dLng / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        /**
+         * 地域ベースで物件を並び替える関数
+         * @param {Array} properties - 物件配列
+         * @returns {Array} 並び替えられた物件配列
+         */
+        function sortPropertiesByRegion(properties) {
+            // 各物件に座標を付与
+            const propertiesWithCoords = properties.map(property => ({
+                ...property,
+                coords: estimateCoordinates(property.address),
+                townName: extractTownName(property.address)
+            }));
+
+            // 町名でグループ化し、町名順にソート
+            const groupedByTown = {};
+            propertiesWithCoords.forEach(property => {
+                const town = property.townName;
+                if (!groupedByTown[town]) {
+                    groupedByTown[town] = [];
+                }
+                groupedByTown[town].push(property);
+            });
+
+            // 町名をソートし、町内では保存順を維持
+            const sortedTowns = Object.keys(groupedByTown).sort((a, b) => {
+                if (a === '住所不明') return 1;
+                if (b === '住所不明') return -1;
+                return a.localeCompare(b, 'ja');
+            });
+
+            // 結果を構築
+            const sortedProperties = [];
+            sortedTowns.forEach(town => {
+                sortedProperties.push(...groupedByTown[town]);
+            });
+
+            return sortedProperties;
+        }
+
+        /**
+ * 最短距離ルートを計算する関数（貪欲法）
+ * @param {Array} properties - 物件配列
+ * @param {Object} finalDestination - 最終目的地（オプション）
+ * @returns {Array} 最適化された物件配列
+ */
+        function optimizeRoute(properties, finalDestination = null) {
+            console.log('optimizeRoute開始:', {
+                propertiesCount: properties.length,
+                finalDestination: finalDestination ? finalDestination.propertyName : 'なし'
+            });
+
+            if (properties.length <= 2) {
+                console.log('物件数が少ないため、そのまま返す');
+                return properties;
+            }
+
+            // 座標が取得できない物件は地域ベースソートを使用
+            const propertiesWithCoords = properties.map(property => ({
+                ...property,
+                coords: estimateCoordinates(property.address)
+            }));
+
+            const validCoordProperties = propertiesWithCoords.filter(p => p.coords);
+            const invalidCoordProperties = propertiesWithCoords.filter(p => !p.coords);
+
+            console.log('座標取得結果:', {
+                valid: validCoordProperties.length,
+                invalid: invalidCoordProperties.length
+            });
+
+            if (validCoordProperties.length <= 2) {
+                // 座標が不十分な場合は地域ベースソートを使用
+                console.log('座標が不十分、地域ベースソートを使用');
+                return sortPropertiesByRegion(properties);
+            }
+
+            // 最終目的地がある場合の最適化
+            if (finalDestination && finalDestination.coords) {
+                console.log('最終目的地あり、optimizeRouteWithDestinationを呼び出し');
+                return optimizeRouteWithDestination(validCoordProperties, finalDestination, invalidCoordProperties);
+            }
+
+            // 最短距離ルートを計算（貪欲法）
+            const optimized = [];
+            const remaining = [...validCoordProperties];
+
+            // 最初の物件を出発点として選択
+            let current = remaining.shift();
+            optimized.push(current);
+
+            // 貪欲法で最も近い物件を順次選択
+            while (remaining.length > 0) {
+                let nearestIndex = 0;
+                let nearestDistance = Infinity;
+
+                remaining.forEach((property, index) => {
+                    const distance = calculateDistance(current.coords, property.coords);
+                    if (distance < nearestDistance) {
+                        nearestDistance = distance;
+                        nearestIndex = index;
+                    }
+                });
+
+                current = remaining.splice(nearestIndex, 1)[0];
+                optimized.push(current);
+            }
+
+            // 座標が取得できなかった物件を最後に追加
+            optimized.push(...invalidCoordProperties);
+
+            return optimized;
+        }
+
+        /**
+         * 最終目的地を考慮したルート最適化関数
+         * @param {Array} validCoordProperties - 座標が有効な物件配列
+         * @param {Object} finalDestination - 最終目的地
+         * @param {Array} invalidCoordProperties - 座標が無効な物件配列
+         * @returns {Array} 最適化された物件配列
+         */
+        function optimizeRouteWithDestination(validCoordProperties, finalDestination, invalidCoordProperties) {
+            console.log('optimizeRouteWithDestination開始:', {
+                validCoordProperties: validCoordProperties.length,
+                finalDestination: finalDestination.propertyName,
+                finalDestinationCoords: finalDestination.coords
+            });
+
+            if (validCoordProperties.length <= 1) {
+                console.log('有効座標物件が1件以下、そのまま返す');
+                return [...validCoordProperties, ...invalidCoordProperties];
+            }
+
+            // 最終目的地に最も近い物件を最後に配置するために逆算で最適化
+            const optimized = [];
+            const remaining = [...validCoordProperties];
+
+            // 最終目的地に最も近い物件を見つけて最後にする
+            let lastPropertyIndex = 0;
+            let shortestToDestination = Infinity;
+
+            console.log('最終目的地への距離計算開始...');
+            remaining.forEach((property, index) => {
+                const distanceToDestination = calculateDistance(property.coords, finalDestination.coords);
+                console.log(`${property.propertyName} → ${finalDestination.propertyName}: ${distanceToDestination.toFixed(2)}km`);
+                if (distanceToDestination < shortestToDestination) {
+                    shortestToDestination = distanceToDestination;
+                    lastPropertyIndex = index;
+                }
+            });
+
+            const lastProperty = remaining.splice(lastPropertyIndex, 1)[0];
+            console.log(`最終目的地に最も近い物件: ${lastProperty.propertyName} (距離: ${shortestToDestination.toFixed(2)}km)`);
+
+            // 残りの物件で最短ルートを構築
+            console.log('最短ルート構築開始...');
+            if (remaining.length > 0) {
+                let current = remaining.shift();
+                optimized.push(current);
+                console.log(`出発地: ${current.propertyName}`);
+
+                // 最後の物件（目的地に近い物件）まで最短ルートで巡回
+                while (remaining.length > 0) {
+                    let nearestIndex = 0;
+                    let nearestDistance = Infinity;
+
+                    remaining.forEach((property, index) => {
+                        const distance = calculateDistance(current.coords, property.coords);
+                        if (distance < nearestDistance) {
+                            nearestDistance = distance;
+                            nearestIndex = index;
+                        }
+                    });
+
+                    current = remaining.splice(nearestIndex, 1)[0];
+                    optimized.push(current);
+                    console.log(`次の経由地: ${current.propertyName} (前の物件からの距離: ${nearestDistance.toFixed(2)}km)`);
+                }
+            }
+
+            // 最終目的地に近い物件を最後に追加
+            optimized.push(lastProperty);
+            console.log(`最終経由地: ${lastProperty.propertyName} (大塚駐車場に最も近い)`);
+
+            // 座標が取得できなかった物件を最後に追加
+            optimized.push(...invalidCoordProperties);
+            if (invalidCoordProperties.length > 0) {
+                console.log('座標不明物件を最後に追加:', invalidCoordProperties.map(p => p.propertyName));
+            }
+
+            console.log('最終的な最適化されたルート:', optimized.map(p => p.propertyName));
+            return optimized;
+        }
+
+        /**
+         * Googleマップのリンクを生成・更新する関数
+         * 保存済み物件の住所を最適化されたルートで表示
+         */
+        function updateMapLink() {
+            const container = document.getElementById('mapLinkContainer');
+
+            if (savedProperties.length === 0) {
+                container.innerHTML = '<p class="loading">保存済み物件がないため、マップリンクを生成できません</p>';
+                return;
+            }
+
+            if (savedProperties.length === 1) {
+                // 1件の場合は単純な場所表示
+                const address = encodeURIComponent(savedProperties[0].address || '');
+                const singleLocationUrl = `https://www.google.com/maps/search/${address}`;
+
+                container.innerHTML = `
+                     <p><strong>保存済み物件:</strong> 1件</p>
+                     <a href="${singleLocationUrl}" target="_blank" class="map-link">
+                         📍 Googleマップで表示
+                     </a>
+                 `;
+                return;
+            }
+
+            // 複数件の場合は経路表示
+            try {
+                const validProperties = savedProperties.filter(property =>
+                    property.address && property.address.trim() !== ''
+                );
+
+                if (validProperties.length === 0) {
+                    container.innerHTML = '<p class="error">有効な住所がないため、マップリンクを生成できません</p>';
+                    return;
+                }
+
+                // 固定到着地点の設定を確認
+                const useCustomDestination = getCustomDestinationEnabled();
+                let customDestination = null;
+
+                console.log('大塚駐車場設定確認:', {
+                    useCustomDestination,
+                    savedValue: localStorage.getItem('useCustomDestination')
+                });
+
+                if (useCustomDestination) {
+                    // 固定到着地点オブジェクトを作成
+                    const destinationAddress = getCustomDestinationAddress();
+                    const destinationCoords = estimateCoordinates(destinationAddress);
+
+                    customDestination = {
+                        propertyName: '大塚駐車場',
+                        address: destinationAddress,
+                        propertyId: 'custom-destination',
+                        coords: destinationCoords
+                    };
+
+                    console.log('大塚駐車場オブジェクト作成:', {
+                        address: destinationAddress,
+                        coords: destinationCoords
+                    });
+                }
+
+                // ルート最適化オプションを取得（大塚駐車場を考慮）
+                const optimizationType = getSelectedOptimization();
+                let sortedProperties;
+
+                // デバッグ情報をコンソールに出力
+                console.log('最適化処理開始:', {
+                    optimizationType,
+                    useCustomDestination,
+                    customDestination: customDestination ? '設定済み' : '未設定',
+                    validPropertiesCount: validProperties.length
+                });
+
+                switch (optimizationType) {
+                    case 'saved_order':
+                        sortedProperties = validProperties;
+                        console.log('保存順で並び替え完了');
+                        break;
+                    case 'region_based':
+                        // 地域別ソートの順序が存在する場合はそれを使用、そうでなければデフォルトの地域別ソート
+                        const regionSortOrder = getRegionSortOrder();
+                        if (regionSortOrder && regionSortOrder.length > 0) {
+                            sortedProperties = regionSortOrder;
+                            console.log('カスタム地域順序で並び替え完了');
+                        } else {
+                            sortedProperties = sortPropertiesByRegion(validProperties);
+                            console.log('デフォルト地域別で並び替え完了');
+                        }
+                        break;
+                    case 'region_select':
+                        // 選択された地域のみの物件を取得
+                        const selectedRegions = getSelectedRegions();
+                        if (selectedRegions.length > 0) {
+                            sortedProperties = validProperties.filter(property => {
+                                const propertyTown = extractTownName(property.address);
+                                return selectedRegions.includes(propertyTown);
+                            });
+                            // 地域別にソート
+                            sortedProperties = sortPropertiesByRegion(sortedProperties);
+                            console.log('地域選択で並び替え完了:', selectedRegions, sortedProperties.length + '件');
+                        } else {
+                            // 地域が選択されていない場合は空配列
+                            sortedProperties = [];
+                            console.log('地域が選択されていません');
+                        }
+                        break;
+                    case 'distance_optimized':
+                        // 大塚駐車場を考慮した距離最適化
+                        console.log('距離最適化開始 - 大塚駐車場:', customDestination ? '考慮する' : '考慮しない');
+                        sortedProperties = optimizeRoute(validProperties, customDestination);
+                        console.log('距離最適化完了:', sortedProperties.map(p => p.propertyName));
+                        break;
+                    case 'manual':
+                        sortedProperties = getManualSortOrder() || validProperties;
+                        console.log('手動並び替え完了');
+                        break;
+                    default:
+                        // デフォルトは地域別
+                        console.log('デフォルト地域別開始');
+                        sortedProperties = sortPropertiesByRegion(validProperties);
+                        console.log('デフォルト地域別完了:', sortedProperties.map(p => p.propertyName));
+                }
+
+                // 最終的な物件配列を構築
+                let finalSortedProperties = [...sortedProperties];
+                let addresses = sortedProperties.map(property => property.address);
+
+                if (useCustomDestination && customDestination) {
+                    finalSortedProperties.push(customDestination);
+                    addresses.push(customDestination.address);
+                }
+
+                // Googleマップの経路URLを生成
+                const origin = encodeURIComponent(addresses[0]);
+                const destination = encodeURIComponent(addresses[addresses.length - 1]);
+
+                let mapUrl = `https://www.google.com/maps/dir/${origin}`;
+
+                // 中間の経由地を追加
+                if (addresses.length > 2) {
+                    const waypoints = addresses.slice(1, -1).map(addr => encodeURIComponent(addr)).join('/');
+                    mapUrl += `/${waypoints}`;
+                }
+
+                mapUrl += `/${destination}`;
+
+                // 最適化オプションを追加
+                mapUrl += '?travelmode=driving&optimize=true';
+
+                // ルート最適化の説明を表示
+                container.innerHTML = generateRouteDisplay(finalSortedProperties, addresses, mapUrl, optimizationType);
+
+                // 手動並び替えが選択されている場合、デバイスに応じた初期化
+                if (optimizationType === 'manual') {
+                    setTimeout(() => {
+                        if (isTouchDevice()) {
+                            initializeTouchInterface();
+                        } else {
+                            initializeDragAndDrop();
+                        }
+                    }, 100); // UIの描画完了を待つ
+                }
+
+                // 地域別ソートが選択されている場合、地域ドラッグアンドドロップを初期化
+                if (optimizationType === 'region_based') {
+                    setTimeout(() => {
+                        initializeRegionDragAndDrop();
+                        if (isTouchDevice()) {
+                            updateRegionMobileButtons();
+                        }
+                    }, 100); // UIの描画完了を待つ
+                }
+
+            } catch (error) {
+                console.error('マップリンク生成エラー:', error);
+                container.innerHTML = '<p class="error">マップリンクの生成に失敗しました</p>';
+            }
+        }
+
+        /**
+         * ルート表示のHTMLを生成する関数
+         */
+        function generateRouteDisplay(sortedProperties, addresses, mapUrl, optimizationType) {
+            const optimizationLabels = {
+                'saved_order': '保存順',
+                'region_based': '地域別',
+                'region_select': '地域選択',
+                'distance_optimized': '距離最適化',
+                'manual': '手動並び替え'
+            };
+
+            return `
+                 <div class="route-optimization">
+                     <div class="route-optimization-header">
+                         🗺️ ルート最適化オプション
+                     </div>
+                     <div class="route-options">
+                         <div class="route-option">
+                             <input type="radio" id="saved_order" name="optimization" value="saved_order" ${optimizationType === 'saved_order' ? 'checked' : ''} onchange="updateMapLink()">
+                             <label for="saved_order">保存順</label>
+                         </div>
+                         <div class="route-option">
+                             <input type="radio" id="region_based" name="optimization" value="region_based" ${optimizationType === 'region_based' ? 'checked' : ''} onchange="updateMapLink()">
+                             <label for="region_based">地域別 (推奨)</label>
+                         </div>
+                         <div class="route-option">
+                             <input type="radio" id="region_select" name="optimization" value="region_select" ${optimizationType === 'region_select' ? 'checked' : ''} onchange="updateMapLink()">
+                             <label for="region_select">地域選択</label>
+                         </div>
+                         <div class="route-option">
+                             <input type="radio" id="distance_optimized" name="optimization" value="distance_optimized" ${optimizationType === 'distance_optimized' ? 'checked' : ''} onchange="updateMapLink()">
+                             <label for="distance_optimized">距離最適化</label>
+                         </div>
+                         <div class="route-option">
+                             <input type="radio" id="manual" name="optimization" value="manual" ${optimizationType === 'manual' ? 'checked' : ''} onchange="updateMapLink()">
+                             <label for="manual">手動並び替え</label>
+                         </div>
+                     </div>
+                     
+                     <div class="destination-option">
+                         <div class="destination-option-header">
+                             🏁 到着地点の設定
+                         </div>
+                         <div class="destination-choice">
+                             <input type="checkbox" id="useCustomDestination" onchange="handleCustomDestinationChange()" ${getCustomDestinationEnabled() ? 'checked' : ''}>
+                             <label for="useCustomDestination">大塚駐車場を最終目的地にする</label>
+                         </div>
+                         <div class="custom-destination">
+                             🅿️ 大塚駐車場<br>
+                             📍 千葉県柏市中央１丁目１−３
+                         </div>
+                         <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                             ※ チェックを外すと、保存済み物件の最後が目的地になります<br>
+                             ※ チェックを入れると、すべての物件を回った後に大塚駐車場に向かいます
+                         </div>
+                     </div>
+                     
+                     ${optimizationType === 'manual' ? generateManualSortInterface(sortedProperties) : ''}
+                     ${optimizationType === 'region_based' ? generateRegionBasedSortInterface(sortedProperties) : ''}
+                     ${optimizationType === 'region_select' ? generateRegionSelectInterface(sortedProperties) : ''}
+                 </div>
+                 
+                 <div style="margin-top: 20px;">
+                     <p><strong>経路情報:</strong> ${addresses.length}箇所を${optimizationLabels[optimizationType]}で表示${getCustomDestinationEnabled() ? ' + 大塚駐車場' : ''}</p>
+                     <a href="${mapUrl}" target="_blank" class="map-link">
+                         🗺️ Googleマップで最適化されたルートを表示
+                     </a>
+                 </div>
+             `;
+        }
+
+        /**
+         * 統計情報を更新する関数
+         * 総物件数、検索結果数、保存済み件数を画面に表示する
+         */
+        function updateStats() {
+            document.getElementById('totalProperties').textContent = allProperties.length.toLocaleString();
+            document.getElementById('searchResultCount').textContent = currentSearchResults.length.toLocaleString();
+            document.getElementById('savedCount').textContent = savedProperties.length.toLocaleString();
+        }
+
+        /**
+         * 都道府県・市区町村フィルターのオプションを設定する関数
+         * 物件データから一意の地域リストを抽出してセレクトボックスに設定する
+         */
+        function populateLocationFilters() {
+            const prefectures = new Set();
+            const cities = new Set();
+
+            allProperties.forEach(property => {
+                if (property.address) {
+                    // 住所から都道府県を抽出（例: "千葉県野田市..." → "千葉県"）
+                    const prefMatch = property.address.match(/^(.*?[都道府県])/);
+                    if (prefMatch) {
+                        prefectures.add(prefMatch[1]);
+                    }
+
+                    // 住所から市区町村を抽出（例: "千葉県野田市..." → "野田市"）
+                    const cityMatch = property.address.match(/[都道府県](.*?[市区町村])/);
+                    if (cityMatch) {
+                        cities.add(cityMatch[1]);
+                    }
+                }
+            });
+
+            // 都道府県フィルターに追加
+            const prefSelect = document.getElementById('prefectureFilter');
+            Array.from(prefectures).sort().forEach(pref => {
+                const option = document.createElement('option');
+                option.value = pref;
+                option.textContent = pref;
+                prefSelect.appendChild(option);
+            });
+
+            // 市区町村フィルターに追加
+            const citySelect = document.getElementById('cityFilter');
+            Array.from(cities).sort().forEach(city => {
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = city;
+                citySelect.appendChild(option);
+            });
+        }
+
+        /**
+         * 都道府県でフィルタリングする関数
+         */
+        function filterByPrefecture() {
+            const selectedPref = document.getElementById('prefectureFilter').value;
+
+            if (!selectedPref) {
+                currentSearchResults = [...allProperties];
+            } else {
+                currentSearchResults = allProperties.filter(property =>
+                    property.address && property.address.includes(selectedPref)
+                );
+            }
+
+            // 市区町村フィルターをリセット
+            document.getElementById('cityFilter').value = '';
+
+            displaySearchResults();
+            updateStats();
+
+            if (selectedPref) {
+                showMessage(`${selectedPref}の物件 ${currentSearchResults.length}件を表示`, 'success');
+            }
+        }
+
+        /**
+         * 市区町村でフィルタリングする関数
+         */
+        function filterByCity() {
+            const selectedCity = document.getElementById('cityFilter').value;
+
+            if (!selectedCity) {
+                filterByPrefecture(); // 都道府県フィルターのみ適用
+            } else {
+                currentSearchResults = allProperties.filter(property =>
+                    property.address && property.address.includes(selectedCity)
+                );
+
+                displaySearchResults();
+                updateStats();
+                showMessage(`${selectedCity}の物件 ${currentSearchResults.length}件を表示`, 'success');
+            }
+        }
+
+        /**
+         * 保存済み物件をJSONファイルとしてエクスポートする関数
+         */
+        function exportSavedProperties() {
+            if (savedProperties.length === 0) {
+                showMessage('エクスポートする物件がありません', 'error');
+                return;
+            }
+
+            try {
+                const exportData = {
+                    exportDate: new Date().toISOString(),
+                    totalCount: savedProperties.length,
+                    properties: savedProperties
+                };
+
+                const dataStr = JSON.stringify(exportData, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(dataBlob);
+                link.download = `saved_properties_${new Date().toISOString().split('T')[0]}.json`;
+
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                showMessage(`${savedProperties.length}件の保存済み物件をエクスポートしました`, 'success');
+            } catch (error) {
+                console.error('エクスポートエラー:', error);
+                showMessage('エクスポートに失敗しました', 'error');
+            }
+        }
+
+        /**
+ * 町名別統計を表示する関数
+ * @param {string} message - 基本メッセージ
+ * @param {Object} groupedByTown - 町名でグループ化されたデータ
+ */
+        function showTownStats(message, groupedByTown) {
+            // 既存の町名統計を削除
+            const existingStats = document.querySelector('.town-stats');
+            if (existingStats) {
+                existingStats.remove();
+            }
+
+            // 町名別の物件数をソート（物件数の多い順）
+            const townStats = Object.entries(groupedByTown)
+                .map(([townName, properties]) => ({ townName, count: properties.length }))
+                .sort((a, b) => b.count - a.count);
+
+            const statsDiv = document.createElement('div');
+            statsDiv.className = 'town-stats';
+
+            const topTowns = townStats.slice(0, 5); // 上位5町を表示
+            const topTownsText = topTowns.map(town => `${town.townName}(${town.count}件)`).join('、');
+
+            statsDiv.innerHTML = `
+                 <strong>📊 ${message}</strong>
+                 <div class="town-stats-details">
+                     物件数の多い町: ${topTownsText}
+                     ${townStats.length > 5 ? `、他${townStats.length - 5}町` : ''}
+                 </div>
+             `;
+
+            // 検索結果の前に挿入
+            const searchResults = document.getElementById('searchResults');
+            searchResults.parentNode.insertBefore(statsDiv, searchResults);
+        }
+
+        /**
+         * 保存済み物件の町名別統計を表示する関数
+         * @param {string} message - 基本メッセージ
+         * @param {Object} groupedByTown - 町名でグループ化されたデータ
+         */
+        function showSavedStats(message, groupedByTown) {
+            // 既存の保存済み統計を削除
+            const existingStats = document.querySelector('.saved-town-stats');
+            if (existingStats) {
+                existingStats.remove();
+            }
+
+            // 町名別の物件数をソート（物件数の多い順）
+            const townStats = Object.entries(groupedByTown)
+                .map(([townName, properties]) => ({ townName, count: properties.length }))
+                .sort((a, b) => b.count - a.count);
+
+            const statsDiv = document.createElement('div');
+            statsDiv.className = 'town-stats saved-town-stats';
+            statsDiv.style.background = '#e8f5e8';
+            statsDiv.style.borderColor = '#c3e6c3';
+            statsDiv.style.color = '#2e7d32';
+
+            const topTowns = townStats.slice(0, 3); // 上位3町を表示
+            const topTownsText = topTowns.map(town => `${town.townName}(${town.count}件)`).join('、');
+
+            statsDiv.innerHTML = `
+                 <strong>💾 ${message}</strong>
+                 <div class="town-stats-details">
+                     保存件数の多い町: ${topTownsText}
+                     ${townStats.length > 3 ? `、他${townStats.length - 3}町` : ''}
+                 </div>
+             `;
+
+            // 保存済み物件の前に挿入
+            const savedProperties = document.getElementById('savedProperties');
+            savedProperties.parentNode.insertBefore(statsDiv, savedProperties);
+        }
+
+        /**
+         * メッセージを表示する関数
+         * @param {string} message - 表示するメッセージ
+         * @param {string} type - メッセージタイプ（'success', 'error', 'loading'）
+         */
+        function showMessage(message, type = 'success') {
+            // 既存のメッセージを削除
+            const existingMessage = document.querySelector('.message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = message;
+
+            // メッセージを検索セクションの後に挿入
+            const searchSection = document.querySelector('.subsection');
+            searchSection.parentNode.insertBefore(messageDiv, searchSection.nextSibling);
+
+            // 3秒後にメッセージを自動削除（ローディング以外）
+            if (type !== 'loading') {
+                setTimeout(() => {
+                    if (messageDiv.parentNode) {
+                        messageDiv.remove();
+                    }
+                }, 3000);
+            }
+        }
+
+        /**
+ * 選択されている最適化オプションを取得する関数
+ * @returns {string} 選択されている最適化タイプ
+ */
+        function getSelectedOptimization() {
+            const selected = document.querySelector('input[name="optimization"]:checked');
+            return selected ? selected.value : 'region_based'; // デフォルトは地域別
+        }
+
+        /**
+         * 固定到着地点が有効かどうかを取得する関数
+         * ローカルストレージから設定を読み取る
+         * @returns {boolean} 固定到着地点が有効の場合true
+         */
+        function getCustomDestinationEnabled() {
+            const saved = localStorage.getItem('useCustomDestination');
+            return saved === 'true';
+        }
+
+        /**
+         * 固定到着地点の住所を取得する関数
+         * @returns {string} 固定到着地点の住所
+         */
+        function getCustomDestinationAddress() {
+            return '千葉県柏市中央１丁目１−３';
+        }
+
+        /**
+ * デバイスがタッチデバイスかどうかを判定する関数
+ * @returns {boolean} タッチデバイスの場合true
+ */
+        function isTouchDevice() {
+            return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        }
+
+        /**
+         * 手動並び替えインターフェースを生成する関数
+         * @param {Array} properties - 物件配列
+         * @returns {string} 手動並び替え用のHTML
+         */
+        function generateManualSortInterface(properties) {
+            const isTouch = isTouchDevice();
+            const instructionText = isTouch
+                ? '📱 上下ボタンまたはタッチで順序を変更してください:'
+                : '📝 ドラッグ&ドロップで順序を変更してください:';
+            const detailText = isTouch
+                ? '※ 各物件の上下ボタンで順序を変更するか、物件をタップして選択してから上下ボタンで移動できます'
+                : '※ 「≡」マークをドラッグして順序を変更し、「順序を適用」ボタンをクリックしてください';
+
+            return `
+                 <div class="manual-sort">
+                     <div style="font-weight: bold; margin-bottom: 10px; color: #856404;">
+                         ${instructionText}
+                     </div>
+                     <div style="font-size: 12px; color: #666; margin-bottom: 10px;">
+                         ${detailText}
+                     </div>
+                     ${isTouch ? generateTouchSortInterface(properties) : generateDragSortInterface(properties)}
+                     <button onclick="applyManualSort()" class="button-secondary" style="margin-top: 15px;">
+                         📍 順序を適用してマップを更新
+                     </button>
+                 </div>
+             `;
+        }
+
+        /**
+         * 地域別ソート用のインターフェースを生成する関数
+         * @param {Array} properties - 物件配列
+         * @returns {string} 地域別ソート用のHTML
+         */
+        function generateRegionBasedSortInterface(properties) {
+            // 地域ごとにグループ化
+            const groupedByTown = groupPropertiesByTown(properties);
+            const sortedTownNames = Object.keys(groupedByTown).sort((a, b) => {
+                if (a === '住所不明') return 1;
+                if (b === '住所不明') return -1;
+                return a.localeCompare(b, 'ja');
+            });
+
+            const isTouch = isTouchDevice();
+            const instructionText = isTouch
+                ? '📱 地域の順序を上下ボタンで変更してください:'
+                : '🏘️ 地域グループをドラッグ&ドロップで順序を変更してください:';
+            const detailText = isTouch
+                ? '※ 各地域の上下ボタンで順序を変更できます'
+                : '※ 地域ヘッダーをドラッグして順序を変更し、「順序を適用」ボタンをクリックしてください';
+
+            return `
+                <div class="manual-sort region-sort">
+                    <div style="font-weight: bold; margin-bottom: 10px; color: #856404;">
+                        ${instructionText}
+                    </div>
+                    <div style="font-size: 12px; color: #666; margin-bottom: 10px;">
+                        ${detailText}
+                    </div>
+                    ${isTouch ? generateTouchRegionSortInterface(groupedByTown, sortedTownNames) : generateDragRegionSortInterface(groupedByTown, sortedTownNames)}
+                    <button onclick="applyRegionSort()" class="button-secondary" style="margin-top: 15px;">
+                        🏘️ 地域順序を適用してマップを更新
+                    </button>
+                </div>
+            `;
+        }
+
+        /**
+         * 地域ドラッグ&ドロップ用インターフェースを生成
+         */
+        function generateDragRegionSortInterface(groupedByTown, sortedTownNames) {
+            return `
+                <div class="region-sortable-container" id="regionSortableContainer">
+                    ${sortedTownNames.map((townName, index) => {
+                const properties = groupedByTown[townName];
+                return `
+                            <div class="region-group-sortable" data-town-name="${escapeHtml(townName)}" draggable="true">
+                                <div class="region-header-sortable" title="ドラッグして地域の順序を変更">
+                                    <span class="region-drag-handle">⋮⋮</span>
+                                    📍 ${escapeHtml(townName)} (${properties.length}件)
+                                </div>
+                                <div class="region-properties-list">
+                                    ${properties.map((property, propIndex) => {
+                    const mapLink = generateIndividualMapLink(property.address);
+                    return `
+                                            <div class="region-property-item">
+                                                <div>
+                                                    <strong>${escapeHtml(property.propertyName || '物件名不明')}</strong><br>
+                                                    <small style="color: #666; margin-right: 8px;">${escapeHtml(property.address || '住所不明')}</small>
+                                                    <a href="${mapLink}" target="_blank" class="map-link-small" title="この住所をGoogleマップで開く">
+                                                        🗺️ 地図
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        `;
+                }).join('')}
+                                </div>
+                            </div>
+                        `;
+            }).join('')}
+                </div>
+            `;
+        }
+
+        /**
+         * タッチデバイス用地域ソートインターフェースを生成
+         */
+        function generateTouchRegionSortInterface(groupedByTown, sortedTownNames) {
+            return `
+                <div class="region-sortable-container" id="regionSortableContainer">
+                    ${sortedTownNames.map((townName, index) => {
+                const properties = groupedByTown[townName];
+                return `
+                            <div class="region-group-sortable" data-town-name="${escapeHtml(townName)}">
+                                <div class="region-header-sortable">
+                                    📍 ${escapeHtml(townName)} (${properties.length}件)
+                                    <div class="region-mobile-controls">
+                                        <button class="mobile-btn" onclick="moveRegionUp(event, '${escapeHtml(townName)}')" 
+                                                ${index === 0 ? 'disabled' : ''} title="上に移動">
+                                            ↑
+                                        </button>
+                                        <button class="mobile-btn" onclick="moveRegionDown(event, '${escapeHtml(townName)}')" 
+                                                ${index === sortedTownNames.length - 1 ? 'disabled' : ''} title="下に移動">
+                                            ↓
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="region-properties-list">
+                                    ${properties.map((property, propIndex) => {
+                    const mapLink = generateIndividualMapLink(property.address);
+                    return `
+                                            <div class="region-property-item">
+                                                <div>
+                                                    <strong>${escapeHtml(property.propertyName || '物件名不明')}</strong><br>
+                                                    <small style="color: #666; margin-right: 8px;">${escapeHtml(property.address || '住所不明')}</small>
+                                                    <a href="${mapLink}" target="_blank" class="map-link-small" title="この住所をGoogleマップで開く">
+                                                        🗺️ 地図
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        `;
+                }).join('')}
+                                </div>
+                            </div>
+                        `;
+            }).join('')}
+                </div>
+            `;
+        }
+
+        /**
+         * ドラッグ&ドロップ用インターフェースを生成
+         */
+        function generateDragSortInterface(properties) {
+            return `
+                 <ul class="sortable-list" id="sortableList">
+                     ${properties.map((property, index) => `
+                         <li class="sortable-item" data-property-id="${property.propertyId}" draggable="true">
+                             <span class="drag-handle" title="ドラッグして順序を変更">≡</span>
+                             <div style="flex: 1;">
+                                 <strong>${index + 1}. ${escapeHtml(property.propertyName || '物件名不明')}</strong><br>
+                                 <small style="color: #666;">${escapeHtml(property.address || '住所不明')}</small>
+                             </div>
+                         </li>
+                     `).join('')}
+                 </ul>
+             `;
+        }
+
+        /**
+         * タッチデバイス用インターフェースを生成
+         */
+        function generateTouchSortInterface(properties) {
+            return `
+                 <div class="touch-handle" onclick="clearSelection()">
+                     タップして選択を解除
+                 </div>
+                 <ul class="sortable-list" id="sortableList">
+                     ${properties.map((property, index) => `
+                         <li class="sortable-item" data-property-id="${property.propertyId}" onclick="selectItem(this)">
+                             <div style="flex: 1;" class="property-info-mobile">
+                                 <strong>${index + 1}. ${escapeHtml(property.propertyName || '物件名不明')}</strong><br>
+                                 <small style="color: #666;">${escapeHtml(property.address || '住所不明')}</small>
+                             </div>
+                             <div class="mobile-controls">
+                                 <button class="mobile-btn" onclick="moveUp(event, '${property.propertyId}')" 
+                                         ${index === 0 ? 'disabled' : ''} title="上に移動">
+                                     ↑
+                                 </button>
+                                 <button class="mobile-btn" onclick="moveDown(event, '${property.propertyId}')" 
+                                         ${index === properties.length - 1 ? 'disabled' : ''} title="下に移動">
+                                     ↓
+                                 </button>
+                             </div>
+                         </li>
+                     `).join('')}
+                 </ul>
+             `;
+        }
+
+        /**
+         * 手動並び替えの順序を取得する関数
+         * @returns {Array|null} 手動並び替えされた物件配列
+         */
+        function getManualSortOrder() {
+            const sortableList = document.getElementById('sortableList');
+            if (!sortableList) return null;
+
+            const sortedIds = Array.from(sortableList.children).map(item =>
+                item.getAttribute('data-property-id')
+            );
+
+            const sortedProperties = [];
+            sortedIds.forEach(id => {
+                const property = savedProperties.find(p => p.propertyId === id);
+                if (property) {
+                    sortedProperties.push(property);
+                }
+            });
+
+            return sortedProperties;
+        }
+
+        /**
+ * 手動並び替えを適用する関数
+ */
+        function applyManualSort() {
+            updateMapLink();
+            showMessage('手動並び替えを適用しました', 'success');
+        }
+
+        /**
+         * 物件を上に移動する関数（タッチデバイス用）
+         */
+        function moveUp(event, propertyId) {
+            event.stopPropagation();
+            const sortableList = document.getElementById('sortableList');
+            if (!sortableList) return;
+
+            const items = Array.from(sortableList.children);
+            const currentIndex = items.findIndex(item =>
+                item.getAttribute('data-property-id') === propertyId
+            );
+
+            if (currentIndex > 0) {
+                const currentItem = items[currentIndex];
+                const previousItem = items[currentIndex - 1];
+                sortableList.insertBefore(currentItem, previousItem);
+                updateItemNumbers();
+                updateMobileButtons();
+                showMessage('上に移動しました', 'success');
+            }
+        }
+
+        /**
+         * 物件を下に移動する関数（タッチデバイス用）
+         */
+        function moveDown(event, propertyId) {
+            event.stopPropagation();
+            const sortableList = document.getElementById('sortableList');
+            if (!sortableList) return;
+
+            const items = Array.from(sortableList.children);
+            const currentIndex = items.findIndex(item =>
+                item.getAttribute('data-property-id') === propertyId
+            );
+
+            if (currentIndex < items.length - 1) {
+                const currentItem = items[currentIndex];
+                const nextItem = items[currentIndex + 1];
+                sortableList.insertBefore(nextItem, currentItem);
+                updateItemNumbers();
+                updateMobileButtons();
+                showMessage('下に移動しました', 'success');
+            }
+        }
+
+        /**
+         * アイテムを選択する関数（タッチデバイス用）
+         */
+        function selectItem(element) {
+            // 既存の選択を解除
+            document.querySelectorAll('.sortable-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+
+            // 新しいアイテムを選択
+            element.classList.add('selected');
+
+            // 選択状態をvisualで表示
+            element.style.background = '#e3f2fd';
+            element.style.borderLeft = '4px solid #007bff';
+        }
+
+        /**
+         * 選択を解除する関数
+         */
+        function clearSelection() {
+            document.querySelectorAll('.sortable-item').forEach(item => {
+                item.classList.remove('selected');
+                item.style.background = '';
+                item.style.borderLeft = '';
+            });
+        }
+
+        /**
+         * モバイルボタンの状態を更新する関数
+         */
+        function updateMobileButtons() {
+            const sortableList = document.getElementById('sortableList');
+            if (!sortableList) return;
+
+            const items = Array.from(sortableList.children);
+            items.forEach((item, index) => {
+                const upBtn = item.querySelector('.mobile-btn:first-child');
+                const downBtn = item.querySelector('.mobile-btn:last-child');
+
+                if (upBtn) {
+                    upBtn.disabled = index === 0;
+                }
+                if (downBtn) {
+                    downBtn.disabled = index === items.length - 1;
+                }
+            });
+        }
+
+        /**
+         * 地域別ソートを適用する関数
+         */
+        function applyRegionSort() {
+            updateMapLink();
+            showMessage('地域の順序を適用しました', 'success');
+        }
+
+        /**
+         * 地域選択インターフェースを生成する関数
+         * @param {Array} properties - 保存済み物件配列
+         * @returns {string} 地域選択インターフェースのHTML
+         */
+        function generateRegionSelectInterface(properties) {
+            const groupedProperties = groupPropertiesByTown(properties);
+            const townNames = Object.keys(groupedProperties).sort();
+
+            return `
+                <div class="region-select-container">
+                    <div class="region-select-header">
+                        🎯 表示する地域を選択
+                    </div>
+                    <div class="region-select-description">
+                        チェックした地域のみでルートを作成します
+                    </div>
+                    <div class="region-checkboxes">
+                        ${townNames.map(townName => {
+                const count = groupedProperties[townName].length;
+                return `
+                                <div class="region-checkbox-item">
+                                    <input type="checkbox" id="region_${townName}" value="${townName}" 
+                                           onchange="updateRegionSelection()" checked>
+                                    <label for="region_${townName}">
+                                        ${escapeHtml(townName)} (${count}件)
+                                    </label>
+                                </div>
+                            `;
+            }).join('')}
+                    </div>
+                    <div class="region-select-controls">
+                        <button onclick="selectAllRegions()" class="button-secondary">すべて選択</button>
+                        <button onclick="unselectAllRegions()" class="button-secondary">すべて解除</button>
+                    </div>
+                    <div id="regionSelectionMessage" class="region-selection-message"></div>
+                </div>
+            `;
+        }
+
+        /**
+         * 地域選択を更新する関数
+         */
+        function updateRegionSelection() {
+            const selectedRegions = getSelectedRegions();
+            const messageDiv = document.getElementById('regionSelectionMessage');
+
+            if (selectedRegions.length === 0) {
+                messageDiv.innerHTML = '<div style="color: #dc3545; font-size: 14px; margin-top: 10px;">⚠️ 最低1つの地域を選択してください</div>';
+            } else {
+                messageDiv.innerHTML = `<div style="color: #28a745; font-size: 14px; margin-top: 10px;">✅ ${selectedRegions.length}つの地域が選択されています</div>`;
+            }
+
+            updateMapLink();
+        }
+
+        /**
+         * 選択された地域名を取得する関数
+         * @returns {Array} 選択された地域名の配列
+         */
+        function getSelectedRegions() {
+            const checkboxes = document.querySelectorAll('.region-checkboxes input[type="checkbox"]:checked');
+            if (checkboxes.length === 0) {
+                // 地域選択インターフェースが表示されていない場合、すべての地域を返す
+                const groupedProperties = groupPropertiesByTown(savedProperties);
+                return Object.keys(groupedProperties);
+            }
+            return Array.from(checkboxes).map(checkbox => checkbox.value);
+        }
+
+        /**
+         * すべての地域を選択する関数
+         */
+        function selectAllRegions() {
+            const checkboxes = document.querySelectorAll('.region-checkboxes input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            updateRegionSelection();
+        }
+
+        /**
+         * すべての地域の選択を解除する関数
+         */
+        function unselectAllRegions() {
+            const checkboxes = document.querySelectorAll('.region-checkboxes input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            updateRegionSelection();
+        }
+
+        /**
+         * 指定された地域のみでGoogleマップルートを開く関数
+         * @param {string} townName - 地域名
+         */
+        function openRegionRoute(townName) {
+            console.log('地域ルート作成開始:', townName);
+
+            // 指定された地域の保存済み物件を取得
+            const regionProperties = savedProperties.filter(property => {
+                const propertyTown = extractTownName(property.address);
+                return propertyTown === townName;
+            });
+
+            if (regionProperties.length === 0) {
+                showMessage(`${townName}に保存済み物件がありません`, 'error');
+                return;
+            }
+
+            if (regionProperties.length === 1) {
+                // 1件のみの場合は個別マップリンクを開く
+                const mapLink = generateIndividualMapLink(regionProperties[0].address);
+                window.open(mapLink, '_blank');
+                showMessage(`${townName}の物件(1件)をGoogleマップで開きました`, 'success');
+                return;
+            }
+
+            try {
+                // 住所リストを作成
+                const addresses = regionProperties.map(property => property.address).filter(Boolean);
+
+                if (addresses.length === 0) {
+                    showMessage(`${townName}の物件に有効な住所がありません`, 'error');
+                    return;
+                }
+
+                // 大塚駐車場を最終目的地にするかチェック
+                const useCustomDestination = getCustomDestinationEnabled();
+                if (useCustomDestination) {
+                    addresses.push(getCustomDestinationAddress());
+                }
+
+                // Googleマップの経路URLを生成
+                const origin = encodeURIComponent(addresses[0]);
+                const destination = encodeURIComponent(addresses[addresses.length - 1]);
+
+                let mapUrl = `https://www.google.com/maps/dir/${origin}`;
+
+                // 中間の経由地を追加
+                if (addresses.length > 2) {
+                    const waypoints = addresses.slice(1, -1).map(addr => encodeURIComponent(addr)).join('/');
+                    mapUrl += `/${waypoints}`;
+                }
+
+                mapUrl += `/${destination}`;
+
+                // 最適化オプションを追加
+                mapUrl += '?travelmode=driving&optimize=true';
+
+                // マップを新しいタブで開く
+                window.open(mapUrl, '_blank');
+
+                const destinationInfo = useCustomDestination ? ' + 大塚駐車場' : '';
+                showMessage(`${townName}の物件(${regionProperties.length}件)${destinationInfo}でルートを作成しました`, 'success');
+
+                console.log('地域ルート作成完了:', {
+                    townName,
+                    propertiesCount: regionProperties.length,
+                    addressesCount: addresses.length,
+                    useCustomDestination,
+                    mapUrl
+                });
+
+            } catch (error) {
+                console.error('地域ルート作成エラー:', error);
+                showMessage(`${townName}のルート作成に失敗しました`, 'error');
+            }
+        }
+
+        /**
+         * 地域を上に移動する関数（タッチデバイス用）
+         */
+        function moveRegionUp(event, townName) {
+            event.stopPropagation();
+            const container = document.getElementById('regionSortableContainer');
+            if (!container) return;
+
+            const regions = Array.from(container.children);
+            const currentIndex = regions.findIndex(region =>
+                region.getAttribute('data-town-name') === townName
+            );
+
+            if (currentIndex > 0) {
+                const currentRegion = regions[currentIndex];
+                const previousRegion = regions[currentIndex - 1];
+                container.insertBefore(currentRegion, previousRegion);
+                updateRegionMobileButtons();
+                showMessage(`地域「${townName}」を上に移動しました`, 'success');
+            }
+        }
+
+        /**
+         * 地域を下に移動する関数（タッチデバイス用）
+         */
+        function moveRegionDown(event, townName) {
+            event.stopPropagation();
+            const container = document.getElementById('regionSortableContainer');
+            if (!container) return;
+
+            const regions = Array.from(container.children);
+            const currentIndex = regions.findIndex(region =>
+                region.getAttribute('data-town-name') === townName
+            );
+
+            if (currentIndex < regions.length - 1) {
+                const currentRegion = regions[currentIndex];
+                const nextRegion = regions[currentIndex + 1];
+                container.insertBefore(nextRegion, currentRegion);
+                updateRegionMobileButtons();
+                showMessage(`地域「${townName}」を下に移動しました`, 'success');
+            }
+        }
+
+        /**
+         * 地域モバイルボタンの状態を更新する関数
+         */
+        function updateRegionMobileButtons() {
+            const container = document.getElementById('regionSortableContainer');
+            if (!container) return;
+
+            const regions = Array.from(container.children);
+            regions.forEach((region, index) => {
+                const upBtn = region.querySelector('.mobile-btn:first-child');
+                const downBtn = region.querySelector('.mobile-btn:last-child');
+
+                if (upBtn) {
+                    upBtn.disabled = index === 0;
+                }
+                if (downBtn) {
+                    downBtn.disabled = index === regions.length - 1;
+                }
+            });
+        }
+
+        /**
+         * 地域別ソートの順序を取得する関数
+         * @returns {Array} 並び替えられた物件配列
+         */
+        function getRegionSortOrder() {
+            const container = document.getElementById('regionSortableContainer');
+            if (!container) return null;
+
+            const regionElements = Array.from(container.children);
+            const sortedProperties = [];
+
+            regionElements.forEach(regionElement => {
+                const townName = regionElement.getAttribute('data-town-name');
+                const townProperties = savedProperties.filter(property => {
+                    const propertyTown = extractTownName(property.address);
+                    return propertyTown === townName;
+                });
+                sortedProperties.push(...townProperties);
+            });
+
+            return sortedProperties;
+        }
+
+        /**
+         * 地域ドラッグアンドドロップを初期化する関数
+         */
+        function initializeRegionDragAndDrop() {
+            console.log('地域ドラッグアンドドロップを初期化中...');
+
+            const container = document.getElementById('regionSortableContainer');
+            if (!container) {
+                console.log('regionSortableContainer要素が見つかりません');
+                return;
+            }
+
+            const regionGroups = container.querySelectorAll('.region-group-sortable');
+            let draggedRegion = null;
+
+            regionGroups.forEach(regionGroup => {
+                regionGroup.draggable = true;
+
+                // ドラッグ開始
+                regionGroup.addEventListener('dragstart', function (e) {
+                    const townName = this.getAttribute('data-town-name');
+                    console.log('地域ドラッグ開始:', townName);
+                    draggedRegion = this;
+                    this.classList.add('dragging');
+
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/html', this.outerHTML);
+                });
+
+                // ドラッグ終了
+                regionGroup.addEventListener('dragend', function (e) {
+                    console.log('地域ドラッグ終了');
+                    this.classList.remove('dragging');
+
+                    // 全ての境界線を削除
+                    regionGroups.forEach(group => {
+                        group.style.borderTop = '';
+                        group.style.borderBottom = '';
+                    });
+
+                    draggedRegion = null;
+                });
+
+                // ドラッグオーバー
+                regionGroup.addEventListener('dragover', function (e) {
+                    e.preventDefault();
+                    if (draggedRegion && draggedRegion !== this) {
+                        e.dataTransfer.dropEffect = 'move';
+
+                        // 全ての境界線をクリア
+                        regionGroups.forEach(group => {
+                            group.style.borderTop = '';
+                            group.style.borderBottom = '';
+                        });
+
+                        // ドロップ位置を決定
+                        const rect = this.getBoundingClientRect();
+                        const midpoint = rect.top + rect.height / 2;
+
+                        if (e.clientY < midpoint) {
+                            // 上に挿入
+                            this.style.borderTop = '4px solid #007bff';
+                        } else {
+                            // 下に挿入
+                            this.style.borderBottom = '4px solid #007bff';
+                        }
+                    }
+                });
+
+                // ドラッグリーブ
+                regionGroup.addEventListener('dragleave', function (e) {
+                    const rect = this.getBoundingClientRect();
+                    if (e.clientX < rect.left || e.clientX > rect.right ||
+                        e.clientY < rect.top || e.clientY > rect.bottom) {
+                        this.style.borderTop = '';
+                        this.style.borderBottom = '';
+                    }
+                });
+
+                // ドロップ
+                regionGroup.addEventListener('drop', function (e) {
+                    e.preventDefault();
+                    this.style.borderTop = '';
+                    this.style.borderBottom = '';
+
+                    if (draggedRegion && draggedRegion !== this) {
+                        const rect = this.getBoundingClientRect();
+                        const midpoint = rect.top + rect.height / 2;
+
+                        const draggedTownName = draggedRegion.getAttribute('data-town-name');
+                        const targetTownName = this.getAttribute('data-town-name');
+
+                        if (e.clientY < midpoint) {
+                            // 上に挿入
+                            this.parentNode.insertBefore(draggedRegion, this);
+                            console.log(`地域「${draggedTownName}」を「${targetTownName}」の上に移動`);
+                        } else {
+                            // 下に挿入
+                            this.parentNode.insertBefore(draggedRegion, this.nextSibling);
+                            console.log(`地域「${draggedTownName}」を「${targetTownName}」の下に移動`);
+                        }
+
+                        showMessage(`地域「${draggedTownName}」の順序を変更しました`, 'success');
+
+                        // モバイルボタンの状態を更新
+                        if (isTouchDevice()) {
+                            updateRegionMobileButtons();
+                        }
+                    }
+                });
+            });
+
+            console.log(`${regionGroups.length}個の地域グループでドラッグ&ドロップ初期化完了`);
+        }
+
+        /**
+         * 町名グループのドラッグ&ドロップ機能を初期化する関数
+         * 地域ごとの移動を可能にする
+         */
+        function initializeTownGroupDragAndDrop() {
+            console.log('町名グループのドラッグ&ドロップを初期化中...');
+
+            const townGroups = document.querySelectorAll('.town-group');
+            let draggedTownGroup = null;
+
+            townGroups.forEach((townGroup, index) => {
+                townGroup.draggable = true;
+                townGroup.setAttribute('data-town-index', index);
+
+                // ドラッグ開始
+                townGroup.addEventListener('dragstart', function (e) {
+                    const townName = this.querySelector('.town-header').textContent.trim();
+                    console.log('町名グループのドラッグ開始:', townName);
+                    draggedTownGroup = this;
+                    this.classList.add('dragging');
+
+                    // ドラッグ中のデータを設定
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/html', this.outerHTML);
+                });
+
+                // ドラッグ終了
+                townGroup.addEventListener('dragend', function (e) {
+                    console.log('町名グループのドラッグ終了');
+                    this.classList.remove('dragging');
+
+                    // 全ての境界線を削除
+                    document.querySelectorAll('.town-group').forEach(group => {
+                        group.style.borderTop = '';
+                        group.style.borderBottom = '';
+                    });
+
+                    draggedTownGroup = null;
+                });
+
+                // ドラッグオーバー
+                townGroup.addEventListener('dragover', function (e) {
+                    e.preventDefault();
+                    if (draggedTownGroup && draggedTownGroup !== this) {
+                        e.dataTransfer.dropEffect = 'move';
+
+                        // 全ての境界線をクリア
+                        document.querySelectorAll('.town-group').forEach(group => {
+                            group.style.borderTop = '';
+                            group.style.borderBottom = '';
+                        });
+
+                        // ドロップ位置を決定
+                        const rect = this.getBoundingClientRect();
+                        const midpoint = rect.top + rect.height / 2;
+
+                        if (e.clientY < midpoint) {
+                            // 上に挿入
+                            this.style.borderTop = '4px solid #007bff';
+                        } else {
+                            // 下に挿入
+                            this.style.borderBottom = '4px solid #007bff';
+                        }
+                    }
+                });
+
+                // ドラッグリーブ
+                townGroup.addEventListener('dragleave', function (e) {
+                    // マウスが完全に要素から離れた場合のみボーダーを削除
+                    const rect = this.getBoundingClientRect();
+                    if (e.clientX < rect.left || e.clientX > rect.right ||
+                        e.clientY < rect.top || e.clientY > rect.bottom) {
+                        this.style.borderTop = '';
+                        this.style.borderBottom = '';
+                    }
+                });
+
+                // ドロップ
+                townGroup.addEventListener('drop', function (e) {
+                    e.preventDefault();
+                    this.style.borderTop = '';
+                    this.style.borderBottom = '';
+
+                    if (draggedTownGroup && draggedTownGroup !== this) {
+                        const rect = this.getBoundingClientRect();
+                        const midpoint = rect.top + rect.height / 2;
+
+                        const draggedTownName = draggedTownGroup.querySelector('.town-header').textContent.trim();
+                        const targetTownName = this.querySelector('.town-header').textContent.trim();
+
+                        if (e.clientY < midpoint) {
+                            // 上に挿入
+                            this.parentNode.insertBefore(draggedTownGroup, this);
+                            console.log(`地域「${draggedTownName}」を「${targetTownName}」の上に移動`);
+                        } else {
+                            // 下に挿入
+                            this.parentNode.insertBefore(draggedTownGroup, this.nextSibling);
+                            console.log(`地域「${draggedTownName}」を「${targetTownName}」の下に移動`);
+                        }
+
+                        showMessage(`地域「${draggedTownName}」の順序を変更しました`, 'success');
+
+                        // 移動後にイベントリスナーを再初期化
+                        setTimeout(() => {
+                            initializeTownGroupDragAndDrop();
+                        }, 100);
+                    }
+                });
+            });
+
+            console.log(`${townGroups.length}個の町名グループでドラッグ&ドロップ初期化完了`);
+        }
+
+        /**
+         * ドラッグ&ドロップ機能を初期化する関数
+         */
+        function initializeDragAndDrop() {
+            const sortableList = document.getElementById('sortableList');
+            if (!sortableList) {
+                console.log('sortableList要素が見つかりません');
+                return;
+            }
+
+            console.log('ドラッグ&ドロップを初期化中...');
+            let draggedElement = null;
+
+            // 既存のイベントリスナーを削除（重複防止）
+            const newSortableList = sortableList.cloneNode(true);
+            sortableList.parentNode.replaceChild(newSortableList, sortableList);
+
+            // ドラッグ開始
+            newSortableList.addEventListener('dragstart', function (e) {
+                console.log('ドラッグ開始:', e.target);
+                if (e.target.classList.contains('sortable-item')) {
+                    draggedElement = e.target;
+                    e.target.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/html', e.target.outerHTML);
+                }
+            });
+
+            // ドラッグ終了
+            newSortableList.addEventListener('dragend', function (e) {
+                console.log('ドラッグ終了:', e.target);
+                if (e.target.classList.contains('sortable-item')) {
+                    e.target.classList.remove('dragging');
+                    draggedElement = null;
+                    // 番号を更新
+                    updateItemNumbers();
+                }
+            });
+
+            // ドラッグオーバー
+            newSortableList.addEventListener('dragover', function (e) {
+                e.preventDefault();
+                if (draggedElement) {
+                    const afterElement = getDragAfterElement(newSortableList, e.clientY);
+                    if (afterElement == null) {
+                        newSortableList.appendChild(draggedElement);
+                    } else {
+                        newSortableList.insertBefore(draggedElement, afterElement);
+                    }
+                }
+            });
+
+            // ドロップ
+            newSortableList.addEventListener('drop', function (e) {
+                e.preventDefault();
+                console.log('ドロップ完了');
+                updateItemNumbers();
+            });
+
+            // 各アイテムをドラッグ可能に設定
+            newSortableList.querySelectorAll('.sortable-item').forEach((item, index) => {
+                item.draggable = true;
+
+                // ドラッグハンドルのイベント
+                const handle = item.querySelector('.drag-handle');
+                if (handle) {
+                    handle.addEventListener('mousedown', function (e) {
+                        console.log('ドラッグハンドルクリック');
+                        item.style.cursor = 'grabbing';
+                    });
+
+                    handle.addEventListener('mouseup', function (e) {
+                        item.style.cursor = 'grab';
+                    });
+                }
+            });
+
+            console.log('ドラッグ&ドロップ初期化完了');
+        }
+
+        /**
+         * アイテムの番号を更新する関数
+         */
+        function updateItemNumbers() {
+            const sortableList = document.getElementById('sortableList');
+            if (!sortableList) return;
+
+            sortableList.querySelectorAll('.sortable-item').forEach((item, index) => {
+                const strongElement = item.querySelector('strong');
+                if (strongElement) {
+                    const text = strongElement.textContent;
+                    const newText = text.replace(/^\d+\./, `${index + 1}.`);
+                    strongElement.textContent = newText;
+                }
+            });
+        }
+
+        /**
+ * タッチインターフェースを初期化する関数
+ */
+        function initializeTouchInterface() {
+            console.log('タッチインターフェースを初期化中...');
+            updateMobileButtons();
+
+            // タッチによる長押しでドラッグ&ドロップ風の操作も可能にする
+            const sortableList = document.getElementById('sortableList');
+            if (sortableList) {
+                let touchStartY = 0;
+                let isDragging = false;
+                let draggedElement = null;
+
+                sortableList.addEventListener('touchstart', function (e) {
+                    const item = e.target.closest('.sortable-item');
+                    if (item) {
+                        touchStartY = e.touches[0].clientY;
+
+                        // 長押し検出
+                        setTimeout(() => {
+                            if (Math.abs(e.touches[0].clientY - touchStartY) < 10) {
+                                isDragging = true;
+                                draggedElement = item;
+                                item.style.opacity = '0.7';
+                                item.style.transform = 'scale(1.05)';
+                                showMessage('ドラッグ中... 指を離して配置してください', 'loading');
+                            }
+                        }, 500); // 500ms長押し
+                    }
+                });
+
+                sortableList.addEventListener('touchmove', function (e) {
+                    if (isDragging && draggedElement) {
+                        e.preventDefault();
+                        const touch = e.touches[0];
+                        const afterElement = getDragAfterElement(sortableList, touch.clientY);
+
+                        if (afterElement == null) {
+                            sortableList.appendChild(draggedElement);
+                        } else {
+                            sortableList.insertBefore(draggedElement, afterElement);
+                        }
+                    }
+                });
+
+                sortableList.addEventListener('touchend', function (e) {
+                    if (isDragging && draggedElement) {
+                        draggedElement.style.opacity = '';
+                        draggedElement.style.transform = '';
+                        updateItemNumbers();
+                        updateMobileButtons();
+                        showMessage('位置を変更しました', 'success');
+
+                        isDragging = false;
+                        draggedElement = null;
+                    }
+                });
+            }
+
+            console.log('タッチインターフェース初期化完了');
+        }
+
+        /**
+         * ドラッグ位置に基づいて挿入位置を計算する関数
+         */
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.sortable-item:not(.dragging)')];
+
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        /**
+         * 大塚駐車場チェックボックスの変更を処理する関数
+         * チェックボックスの状態をローカルストレージに保存し、
+         * 現在の並び替えオプションに応じて最適化処理を実行する
+         */
+        function handleCustomDestinationChange() {
+            // チェックボックスの状態をローカルストレージに保存
+            const checkbox = document.getElementById('useCustomDestination');
+            localStorage.setItem('useCustomDestination', checkbox.checked);
+
+            // 現在の並び替えオプションを取得
+            const currentOptimization = getSelectedOptimization();
+
+            // マップリンクを更新（距離最適化の場合は大塚駐車場を考慮した再計算が行われる）
+            updateMapLink();
+
+            // メッセージを表示
+            const message = checkbox.checked ?
+                '大塚駐車場を最終目的地に設定しました' :
+                '大塚駐車場を最終目的地から外しました';
+            showMessage(message, 'success');
+
+            // 距離最適化が選択されている場合の詳細メッセージ
+            if (currentOptimization === 'distance_optimized') {
+                const additionalMessage = checkbox.checked ?
+                    'ルートが大塚駐車場を考慮して再最適化されました' :
+                    'ルートが物件のみで再最適化されました';
+                setTimeout(() => showMessage(additionalMessage, 'loading'), 1000);
+            }
+        }
+
+        /**
+         * HTMLエスケープ関数
+         * XSS攻撃を防ぐため、HTMLの特殊文字をエスケープする
+         * @param {string} text - エスケープするテキスト
+         * @returns {string} エスケープされたテキスト
+         */
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        /**
+         * 個別の住所のGoogleマップリンクを生成する関数
+         * @param {string} address - 住所
+         * @returns {string} GoogleマップのURL
+         */
+        function generateIndividualMapLink(address) {
+            if (!address) return '#';
+            const encodedAddress = encodeURIComponent(address);
+            return `https://www.google.com/maps/search/${encodedAddress}`;
+        }
+
+        // Enterキーでの検索機能と初期化処理
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') {
+                        searchProperties();
+                    }
+                });
+            }
+
+            // ローカルストレージから大塚駐車場のチェックボックス状態を復元
+            const checkbox = document.getElementById('useCustomDestination');
+            if (checkbox) {
+                const saved = localStorage.getItem('useCustomDestination');
+                if (saved === 'true') {
+                    checkbox.checked = true;
+                } else if (saved === 'false') {
+                    checkbox.checked = false;
+                }
+                // savedがnullの場合はデフォルト値（unchecked）のまま
+            }
+        });
+    </script>
+</body>
+
+</html>
